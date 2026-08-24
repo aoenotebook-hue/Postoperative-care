@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<title>ShoulderCare — Postop Recovery</title>
+<link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=">
+<style>
+  :root{
+    --navy:#1F3864; --navy-2:#2b4a80; --teal:#2E7D6E; --teal-2:#3f9a89;
+    --care:#2C5F8A; --bg:#F3F5F8; --card:#FFFFFF; --text:#232323; --muted:#6B7280;
+    --border:#E6E9EF; --warn-bg:#FDF3E3; --warn-text:#7A4E00;
+    --danger:#B3261E; --danger-bg:#FDECEC; --danger-dark:#7A1D17;
+    --radius:18px; --radius-sm:12px;
+    --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;background:#DCE1E8;font-family:var(--font);color:var(--text);}
+  body{display:flex;justify-content:center;min-height:100vh;}
+  #app-shell{
+    width:100%;max-width:480px;min-height:100vh;background:var(--bg);
+    display:flex;flex-direction:column;position:relative;overflow-x:hidden;
+    box-shadow:0 0 40px rgba(0,0,0,0.15);
+  }
+  /* ---------- Header ---------- */
+  header{
+    position:sticky;top:0;z-index:20;background:linear-gradient(135deg,var(--navy),var(--navy-2));
+    color:#fff;padding:14px 16px calc(14px + env(safe-area-inset-top,0px));
+    padding-top:calc(14px + env(safe-area-inset-top,0px));
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  .brand{display:flex;align-items:center;gap:10px;}
+  .brand-mark{
+    width:34px;height:34px;border-radius:10px;background:var(--teal);
+    display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;flex-shrink:0;
+  }
+  .brand-name{font-weight:700;font-size:16px;line-height:1.15;}
+  .brand-sub{font-size:11px;opacity:.75;}
+  .lang-toggle{display:flex;background:rgba(255,255,255,0.15);border-radius:999px;padding:3px;flex-shrink:0;}
+  .lang-toggle button{
+    border:none;background:transparent;color:#fff;opacity:.7;font-size:12px;font-weight:600;
+    padding:6px 11px;border-radius:999px;cursor:pointer;
+  }
+  .lang-toggle button.active{background:#fff;color:var(--navy);opacity:1;}
+
+  /* ---------- Main scroll area ---------- */
+  main{flex:1;overflow-y:auto;padding:16px 16px 100px;}
+  .view{display:none;animation:fadeIn .25s ease;}
+  .view.active{display:block;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+
+  /* ---------- Cards ---------- */
+  .card{background:var(--card);border-radius:var(--radius);padding:18px;margin-bottom:14px;box-shadow:0 1px 3px rgba(20,30,50,0.06);}
+  .card h2{margin:0 0 4px;font-size:15px;color:var(--navy);}
+  .muted{color:var(--muted);font-size:13px;}
+
+  /* ---------- Ring ---------- */
+  .ring-wrap{display:flex;flex-direction:column;align-items:center;padding:22px 18px 6px;}
+  .ring-svg{width:180px;height:180px;}
+  .ring-bg{fill:none;stroke:#E9EDF3;stroke-width:12;}
+  .ring-fg{fill:none;stroke:var(--teal);stroke-width:12;stroke-linecap:round;transform:rotate(-90deg);transform-origin:50% 50%;transition:stroke-dashoffset .6s ease;}
+  .ring-center{margin-top:-124px;text-align:center;pointer-events:none;}
+  .ring-day{font-size:30px;font-weight:800;color:var(--navy);line-height:1;}
+  .ring-daylabel{font-size:11px;color:var(--muted);margin-top:2px;}
+  .ring-phase-chip{
+    margin-top:14px;background:var(--teal);color:#fff;font-size:13px;font-weight:700;
+    padding:7px 16px;border-radius:999px;
+  }
+  .ring-phase-desc{font-size:13px;color:var(--muted);text-align:center;margin-top:8px;padding:0 12px;}
+  .edit-date{border:none;background:none;color:var(--care);font-size:12px;font-weight:600;margin-top:10px;cursor:pointer;text-decoration:underline;}
+  .hn-line{font-size:11px;color:var(--muted);margin-top:8px;}
+  .goal-item{font-size:13.5px;color:#262626;line-height:1.6;margin-bottom:4px;}
+
+  /* stepper */
+  .stepper{display:flex;align-items:center;justify-content:space-between;margin:6px 4px 2px;}
+  .step{flex:1;display:flex;flex-direction:column;align-items:center;position:relative;}
+  .step .dot{width:26px;height:26px;border-radius:50%;background:#E9EDF3;color:var(--muted);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;z-index:2;}
+  .step.done .dot{background:var(--teal);color:#fff;}
+  .step.current .dot{background:var(--navy);color:#fff;box-shadow:0 0 0 4px rgba(31,56,100,0.15);}
+  .step .lbl{font-size:10px;color:var(--muted);margin-top:6px;text-align:center;}
+  .step::after{content:"";position:absolute;top:13px;left:50%;width:100%;height:2px;background:#E9EDF3;z-index:1;}
+  .step:last-child::after{display:none;}
+  .step.done::after{background:var(--teal);}
+
+  /* ---------- Accordion (Care tab) ---------- */
+  .acc-item{background:var(--card);border-radius:var(--radius-sm);margin-bottom:10px;overflow:hidden;box-shadow:0 1px 3px rgba(20,30,50,0.05);}
+  .acc-head{width:100%;display:flex;align-items:center;gap:12px;padding:14px 16px;background:none;border:none;text-align:left;cursor:pointer;}
+  .acc-icon{width:32px;height:32px;border-radius:9px;background:var(--care);color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
+  .acc-title{flex:1;font-weight:700;font-size:14px;color:var(--text);}
+  .acc-chevron{transition:transform .2s ease;color:var(--muted);}
+  .acc-item.open .acc-chevron{transform:rotate(180deg);}
+  .acc-body{max-height:0;overflow:hidden;transition:max-height .25s ease;}
+  .acc-item.open .acc-body{max-height:600px;}
+  .acc-body ul{margin:0;padding:2px 16px 16px 40px;}
+  .acc-body li{font-size:13.5px;line-height:1.5;margin-bottom:7px;color:#3a3a3a;}
+
+  /* ---------- Exercises ---------- */
+  .phase-tabs{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin-bottom:14px;}
+  .phase-tab{flex-shrink:0;padding:8px 14px;border-radius:999px;border:1.5px solid var(--border);background:#fff;font-size:12.5px;font-weight:700;color:var(--muted);cursor:pointer;white-space:nowrap;}
+  .phase-tab.active{background:var(--navy);border-color:var(--navy);color:#fff;}
+  .progress-bar-track{height:8px;border-radius:999px;background:#E9EDF3;overflow:hidden;margin-bottom:14px;}
+  .progress-bar-fill{height:100%;background:var(--teal);border-radius:999px;transition:width .3s ease;}
+  .progress-label{font-size:12px;color:var(--muted);margin-bottom:16px;}
+  .ex-row{display:flex;gap:12px;background:var(--card);border-radius:var(--radius-sm);padding:14px;margin-bottom:10px;box-shadow:0 1px 3px rgba(20,30,50,0.05);align-items:flex-start;}
+  .ex-check{width:26px;height:26px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer;margin-top:2px;transition:.15s;}
+  .ex-check.checked{background:var(--teal);border-color:var(--teal);}
+  .ex-check svg{width:14px;height:14px;stroke:#fff;fill:none;stroke-width:3;opacity:0;transition:.15s;}
+  .ex-check.checked svg{opacity:1;}
+  .ex-figure{width:44px;height:44px;border-radius:10px;background:var(--bg);border:1.5px dashed #C6CDD8;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px;color:#B7BEC9;}
+  .ex-body{flex:1;}
+  .ex-name{font-weight:700;font-size:13.5px;margin-bottom:2px;}
+  .ex-name.checked-text{text-decoration:line-through;color:var(--muted);}
+  .ex-desc{font-size:12.5px;color:var(--muted);line-height:1.4;}
+  .ex-note{font-size:12.5px;color:var(--muted);font-style:italic;margin:-4px 0 12px 4px;}
+  .ex-phase-def{background:#EAF0F6;color:var(--care);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:12px;font-size:13px;line-height:1.5;}
+  .ex-phase-def strong{display:block;margin-bottom:3px;font-size:13.5px;}
+  .ex-caution{display:flex;gap:8px;background:var(--warn-bg);color:var(--warn-text);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:12px;font-size:13px;line-height:1.5;font-weight:600;}
+  .phase4-note{background:#EAF1F0;border-radius:var(--radius-sm);padding:14px;font-size:13.5px;color:#1d4d43;margin-bottom:10px;}
+
+  /* ---------- Sleep ---------- */
+  .sleep-card{display:flex;gap:14px;background:var(--card);border-radius:var(--radius);padding:16px;margin-bottom:12px;box-shadow:0 1px 3px rgba(20,30,50,0.06);}
+  .sleep-icon{width:52px;height:52px;border-radius:14px;background:#EAF0F6;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:24px;}
+  .sleep-card.avoid .sleep-icon{background:var(--danger-bg);}
+  .sleep-title{font-weight:700;font-size:14px;margin-bottom:3px;}
+  .sleep-desc{font-size:13px;color:var(--muted);line-height:1.5;}
+
+  /* ---------- Emergency ---------- */
+  .sos-banner{background:linear-gradient(135deg,var(--danger),#8f241d);color:#fff;border-radius:var(--radius);padding:18px;margin-bottom:16px;}
+  .sos-banner h2{margin:0 0 6px;font-size:16px;}
+  .sos-banner p{margin:0;font-size:13px;opacity:.9;line-height:1.5;}
+  .info-note{background:#EAF0F6;color:var(--care);border-radius:var(--radius-sm);padding:13px 14px;margin-bottom:18px;font-size:13px;line-height:1.55;}
+  .flag-section-label{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.03em;color:var(--danger-dark);margin:4px 0 10px;}
+  .flag-section-label.soft{color:#8a6100;margin-top:20px;}
+  .flag-item-soft{display:flex;gap:10px;background:var(--warn-bg);border-radius:var(--radius-sm);padding:13px 14px;margin-bottom:9px;align-items:flex-start;}
+  .flag-dot-soft{width:8px;height:8px;border-radius:50%;background:var(--warn-text);margin-top:6px;flex-shrink:0;}
+  .flag-text-soft{font-size:13.5px;color:var(--warn-text);line-height:1.45;}
+  .flag-item{display:flex;gap:10px;background:var(--danger-bg);border-radius:var(--radius-sm);padding:13px 14px;margin-bottom:9px;align-items:flex-start;}
+  .flag-dot{width:8px;height:8px;border-radius:50%;background:var(--danger);margin-top:6px;flex-shrink:0;}
+  .flag-text{font-size:13.5px;color:var(--danger-dark);line-height:1.45;}
+  .call-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:var(--danger);color:#fff;border:none;border-radius:999px;padding:16px;font-size:15px;font-weight:700;margin:16px 0 8px;cursor:pointer;text-decoration:none;}
+  .call-btn svg{width:18px;height:18px;fill:#fff;}
+  .clinic-edit{font-size:12px;color:var(--care);text-align:center;text-decoration:underline;background:none;border:none;cursor:pointer;display:block;width:100%;margin-bottom:4px;}
+  .emergency-note{font-size:12px;color:var(--muted);text-align:center;margin-top:10px;line-height:1.5;}
+
+  /* ---------- Bottom tab bar ---------- */
+  nav.tabbar{
+    position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;
+    background:#fff;border-top:1px solid var(--border);display:flex;
+    padding:6px 4px calc(6px + env(safe-area-inset-bottom,0px));z-index:30;
+  }
+  .tab-btn{flex:1;background:none;border:none;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 2px;cursor:pointer;color:var(--muted);}
+  .tab-btn svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;}
+  .tab-btn span{font-size:10px;font-weight:600;}
+  .tab-btn.active{color:var(--navy);}
+  .tab-btn.sos{color:var(--danger);}
+  .tab-btn.sos.active{color:var(--danger-dark);}
+  .tab-btn.sos svg{stroke:var(--danger);}
+
+  /* ---------- Onboarding overlay ---------- */
+  #onboard{
+    position:fixed;inset:0;background:rgba(15,25,45,0.55);z-index:100;
+    display:flex;align-items:center;justify-content:center;padding:20px;
+  }
+  #onboard.hidden{display:none;}
+  .onboard-card{background:#fff;border-radius:22px;padding:26px 22px;max-width:400px;width:100%;max-height:90vh;overflow-y:auto;}
+  .onboard-card h1{font-size:19px;color:var(--navy);margin:0 0 6px;}
+  .onboard-card p.lead{font-size:13.5px;color:var(--muted);margin:0 0 20px;line-height:1.5;}
+  .field{margin-bottom:16px;}
+  .field label{display:block;font-size:12.5px;font-weight:700;color:var(--text);margin-bottom:6px;}
+  .field input,.field select{width:100%;padding:12px;border-radius:11px;border:1.5px solid var(--border);font-size:14px;font-family:var(--font);background:#FAFBFC;}
+  .field .hint{font-size:11px;color:var(--muted);margin-top:5px;}
+  .primary-btn{width:100%;background:var(--teal);color:#fff;border:none;border-radius:999px;padding:15px;font-size:15px;font-weight:700;cursor:pointer;margin-top:6px;}
+  .skip-link{display:block;text-align:center;font-size:12.5px;color:var(--muted);margin-top:14px;background:none;border:none;text-decoration:underline;cursor:pointer;width:100%;}
+
+  ::-webkit-scrollbar{width:0;height:0;}
+</style>
+</head>
+<body>
+
+<div id="app-shell">
+
+  <header>
+    <div class="brand">
+      <div class="brand-mark">S</div>
+      <div>
+        <div class="brand-name" data-t="appName">ShoulderCare</div>
+        <div class="brand-sub" data-t="appSub">Postop Recovery Guide</div>
+      </div>
+    </div>
+    <div class="lang-toggle">
+      <button id="btn-lang-en" onclick="setLang('en')">EN</button>
+      <button id="btn-lang-th" onclick="setLang('th')">TH</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- HOME -->
+    <section class="view active" id="view-home">
+      <div class="card" style="padding-bottom:6px;">
+        <div class="ring-wrap">
+          <svg class="ring-svg" viewBox="0 0 160 160">
+            <circle class="ring-bg" cx="80" cy="80" r="70"></circle>
+            <circle class="ring-fg" id="ring-fg" cx="80" cy="80" r="70" stroke-dasharray="440"></circle>
+          </svg>
+          <div class="ring-center">
+            <div class="ring-day" id="ring-day">—</div>
+            <div class="ring-daylabel" id="ring-daylabel" data-t="dayLabel">days since surgery</div>
+          </div>
+          <div class="ring-phase-chip" id="ring-phase-chip">Phase 1</div>
+          <div class="ring-phase-desc" id="ring-phase-desc"></div>
+          <button class="edit-date" onclick="openOnboard(true)" data-t="editDate">Edit surgery date</button>
+          <div class="hn-line" id="hn-line"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 data-t="goalsTitle">Goals After Surgery</h2>
+        <div id="goals-list"></div>
+      </div>
+
+      <div class="card">
+        <h2 data-t="roadmapTitle">Your Recovery Roadmap</h2>
+        <div class="stepper" id="home-stepper"></div>
+      </div>
+
+      <div class="card">
+        <h2 data-t="todayTitle">Today's Reminders</h2>
+        <p class="muted" id="today-reminders" style="line-height:1.6;font-size:13.5px;color:#3a3a3a;"></p>
+      </div>
+    </section>
+
+    <!-- CARE -->
+    <section class="view" id="view-care">
+      <div id="care-accordion"></div>
+    </section>
+
+    <!-- EXERCISES -->
+    <section class="view" id="view-exercises">
+      <div class="phase-tabs" id="ex-phase-tabs"></div>
+      <div id="ex-progress-wrap">
+        <div class="progress-bar-track"><div class="progress-bar-fill" id="ex-progress-fill" style="width:0%"></div></div>
+        <div class="progress-label" id="ex-progress-label"></div>
+      </div>
+      <div id="ex-list"></div>
+    </section>
+
+    <!-- SLEEP -->
+    <section class="view" id="view-sleep">
+      <div id="sleep-list"></div>
+    </section>
+
+    <!-- EMERGENCY -->
+    <section class="view" id="view-sos">
+      <div class="sos-banner">
+        <h2 data-t="sosTitle">When to Get Help</h2>
+        <p data-t="sosSub">If you notice any of the signs below, contact your care team right away.</p>
+      </div>
+      <div id="flag-list"></div>
+      <a class="call-btn" id="call-btn" href="#">
+        <svg viewBox="0 0 24 24"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.4 0 .8-.2 1L6.6 10.8z"/></svg>
+        <span id="call-btn-text"></span>
+      </a>
+      <p class="emergency-note" data-t="emergencyNote">For a life-threatening emergency, call your local emergency number immediately.</p>
+    </section>
+  </main>
+
+  <nav class="tabbar">
+    <button class="tab-btn active" data-tab="home" onclick="switchTab('home')">
+      <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+      <span data-t="tabHome">Home</span>
+    </button>
+    <button class="tab-btn" data-tab="care" onclick="switchTab('care')">
+      <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 3v3h6V3"/><path d="M9 12h6M9 16h6"/></svg>
+      <span data-t="tabCare">Care</span>
+    </button>
+    <button class="tab-btn" data-tab="exercises" onclick="switchTab('exercises')">
+      <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12l2.5 2.5L16 9"/></svg>
+      <span data-t="tabExercises">Exercises</span>
+    </button>
+    <button class="tab-btn" data-tab="sleep" onclick="switchTab('sleep')">
+      <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.5A8.5 8.5 0 1111.5 3 7 7 0 0021 12.5z"/></svg>
+      <span data-t="tabSleep">Sleep</span>
+    </button>
+    <button class="tab-btn sos" data-tab="sos" onclick="switchTab('sos')">
+      <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9L2 18a1.5 1.5 0 001.3 2.2h17.4A1.5 1.5 0 0022 18L13.7 3.9a1.5 1.5 0 00-3.4 0z"/></svg>
+      <span data-t="tabSOS">Alert</span>
+    </button>
+  </nav>
+
+</div>
+
+<!-- Onboarding / settings overlay -->
+<div id="onboard" class="hidden">
+  <div class="onboard-card">
+    <h1 data-t="onboardTitle">Welcome — let's set up your recovery</h1>
+    <p class="lead" data-t="onboardLead">This helps the app show you the right recovery phase and exercises for where you are today.</p>
+
+    <div class="field">
+      <label data-t="onboardDateLabel">Date of your shoulder surgery</label>
+      <input type="date" id="input-surgery-date">
+    </div>
+    <div class="field">
+      <label data-t="onboardHNLabel">Hospital Number (HN)</label>
+      <input type="text" id="input-hn" placeholder="HN-000000">
+      <div class="hint" data-t="onboardHNHint">Helps hospital staff find your records quickly.</div>
+    </div>
+    <button class="primary-btn" onclick="saveOnboard()" data-t="onboardSave">Save &amp; Continue</button>
+    <button class="skip-link" onclick="closeOnboard()" data-t="onboardSkip">Skip for now</button>
+  </div>
+</div>
+
+<script>
+/* ============================= CONTENT ============================= */
+const CONTENT = {
+en: {
+  appName:"ShoulderCare", appSub:"Postop Recovery Guide",
+  dayLabel:"days since surgery", untilLabel:"days until surgery", editDate:"Edit surgery date & HN",
+  roadmapTitle:"Your Recovery Roadmap", todayTitle:"Today's Reminders",
+  goalsTitle:"Goals After Surgery",
+  goals:["Protect the repaired tendon","Minimize stiffness"],
+  hnPrefix:"HN: ", hnAdd:"Add your Hospital Number (HN)",
+  tabHome:"Home", tabCare:"Care", tabExercises:"Exercises", tabSleep:"Sleep", tabSOS:"Alert",
+  sosTitle:"When to Get Help", sosSub:"If you notice any of the signs below, contact your care team right away.",
+  emergencyNote:"For a life-threatening emergency, call your local emergency number immediately.",
+  onboardTitle:"Welcome — let's set up your recovery",
+  onboardLead:"This helps the app show you the right recovery phase and exercises for where you are today.",
+  onboardDateLabel:"Date of your shoulder surgery",
+  onboardHNLabel:"Hospital Number (HN)",
+  onboardHNHint:"Helps hospital staff find your records quickly.",
+  onboardSave:"Save & Continue", onboardSkip:"Skip for now",
+  noDateChip:"Set your surgery date",
+  noDateDesc:"Tap \"Edit surgery date\" above so we can show your current recovery phase.",
+  callBtnPrefix:"Call ",
+  phaseNames:["Phase 1","Phase 2","Phase 3","Phase 4","Phase 5"],
+  phaseShort:["P1","P2","P3","P4","P5"],
+  phaseWeeks:["Before Surgery","Weeks 0–6","Weeks 6–12","Months 3–6","Months 6–12"],
+  phaseTitles:[
+    "Preoperative Preparation","Passive Protection","Active-Assisted / Active Motion","Progressive Resistance","Advanced Conditioning"
+  ],
+  phaseDesc:[
+    "Prepare your body, home, and mindset before surgery for the smoothest possible recovery.",
+    "Maintain distal mobility and passive shoulder relaxation while your repair heals.",
+    "Restore active range of motion and re-establish normal scapular rhythm.",
+    "Build rotator cuff endurance and light strength with scapular stabilization.",
+    "Functional strength, dynamic stability, and return to sport or heavy work."
+  ],
+  completeChip:"1-Year Recovery Timeline Complete",
+  completeDesc:"You've completed the full recovery timeline. Keep up any maintenance exercises your team recommends.",
+  todayReminders:[
+    // Phase 1 — Preoperative Preparation
+    [
+      "Follow your fasting and medication instructions before surgery.",
+      "Arrange for someone to help you at home for the first few days.",
+      "Prepare button-up shirts and set up your recovery space (recliner or wedge pillow).",
+      "Bring your HN and ID with you to the hospital.",
+    ],
+    // Phase 2 — Weeks 0-6
+    [
+      "Wear your sling as instructed — even while sleeping, unless told otherwise.",
+      "Ice the shoulder 15–20 min every 1–2 hours if you're still in the first few days.",
+      "Take pain medication before pain becomes severe, not after.",
+      "Do NOT actively lift your arm — protect the repair.",
+    ],
+    // Phase 3 — Weeks 6-12
+    [
+      "Continue wearing the sling as it's gradually weaned, per your therapist's guidance.",
+      "Focus on active-assisted motion and avoid shrugging.",
+      "No lifting objects over 1–2 lbs.",
+      "Check the Exercises tab for today's movements.",
+    ],
+    // Phase 4 — Months 3-6
+    [
+      "Keep resistance light and repetitions high (15–20).",
+      "Avoid heavy overhead resistance or explosive movements.",
+      "Muscle soreness after exercise is normal; sharp pain is not.",
+      "Check the Exercises tab for today's movements.",
+    ],
+    // Phase 5 — Months 6-12
+    [
+      "Warm up thoroughly before loading.",
+      "Confirm scapular control before increasing resistance or speed.",
+      "Continue any maintenance exercises your team recommends.",
+      "Gradually resume sport- or job-specific tasks under guidance.",
+    ],
+  ],
+  care:[
+    { icon:"🏥", title:"Before Your Surgery", items:[
+      "Follow your pre-op checklist from your surgical team (fasting instructions, medications to pause, what to bring).",
+      "Your nerve block will numb the arm for several hours after surgery — plan your first dose of oral pain medication before the block fully wears off.",
+      "Set up a wedge pillow or recliner for sleeping, and stage daily essentials (phone, water, remote, snacks) within reach at waist height before you go in."
+    ]},
+    { icon:"👕", title:"Dressing (Shirts)", items:[
+      "Use button-up shirts or loose tank tops.",
+      "Lean forward to let the surgical arm hang.",
+      "Insert the surgical arm into the sleeve first, then wrap the shirt around and put the unaffected arm into the other sleeve."
+    ]},
+    { icon:"🩹", title:"Wound / Incision Care", items:[
+      "Keep the dressing clean, dry, and in place until your follow-up visit, unless told otherwise.",
+      "A small amount of blood-tinged drainage in the first 24–48 hours is normal.",
+      "Do not apply lotion, ointment, or powder near the incision unless instructed."
+    ]},
+    { icon:"🚿", title:"Showering & Wound Care", items:[
+      "Showering: allowed, but do not let water run directly onto the incision. To wash underarms, lean forward and let the arm hang naturally.",
+      "Bathing/swimming: avoid submerging the incision in water.",
+      "Sutures/strips: stitches are removed at 7–10 days and replaced with white Steri-Strips, which peel off naturally over 1–3 weeks."
+    ]},
+    { icon:"❄️", title:"Pain & Swelling Control", items:[
+      "Your nerve block will wear off gradually over several hours — take your first dose of prescribed pain medication before it fully fades, not after.",
+      "Take pain medication as prescribed — it works best before pain becomes severe.",
+      "Ice the shoulder 15–20 minutes every 1–2 hours for the first few days, then as needed.",
+      "Rest with the arm supported on pillows to help reduce swelling."
+    ]},
+    { icon:"🎽", title:"Sling Care", items:[
+      "Wear the sling exactly as instructed; remove only for hygiene, icing, or approved exercises.",
+      "Clean and dry the armpit and skin under the strap daily to prevent irritation and odor.",
+      "Check the skin under the strap and armpit daily for redness, rash, or irritation."
+    ]},
+    { icon:"🚗", title:"Activity Precautions", items:[
+      "No driving while wearing the sling or taking prescription pain medication.",
+      "No lifting, pushing, or pulling with the operated arm.",
+      "Avoid smoking or nicotine products — they slow tendon and bone healing."
+    ]},
+    { icon:"🦴", title:"Understanding Your Healing", items:[
+      "Your tendon needs time to anchor back onto bone — this is why movement is strictly limited in the first weeks, even though the incision itself heals faster.",
+      "Muscle fatigue and mild soreness after exercise is normal; a sharp, sudden, or tearing pain is not — stop and contact your team if that happens.",
+      "Keep your shoulder blade relaxed and down during exercises — shrugging or hiking your shoulder is a common compensation pattern to avoid.",
+      "Driving, light chores, and desk work are typically reintroduced around months 3–6, once your surgeon confirms you're ready.",
+      "Once fully recovered, a simple home maintenance routine helps keep your rotator cuff balanced and lowers the risk of re-injury long-term."
+    ]},
+    { icon:"📅", title:"First Follow-up Visit", items:[
+      "Usually scheduled 1–2 weeks after surgery, to check the wound and confirm your rehab phase."
+    ]},
+  ],
+  exercises:[
+    // Phase 1 — Preoperative Preparation
+    [
+      {id:"pre_1", name:"Confirm pre-op instructions", desc:"Follow the fasting and medication-pause instructions from your surgical team."},
+      {id:"pre_2", name:"Arrange help at home", desc:"Arrange for someone to assist you for the first few days after surgery."},
+      {id:"pre_3", name:"Prepare button-up shirts", desc:"Set aside button-up or zip-front shirts you can wear one-armed — see the Care tab for how to dress."},
+      {id:"pre_4", name:"Set up your recovery space", desc:"Set up a recliner or wedge pillow, and stage daily essentials at waist height."},
+    ],
+    // Phase 2 — Weeks 0-6, Passive Protection
+    [
+      {id:"p1_1", name:"Pendulum (Codman) swings", desc:"Lean forward and let the arm hang, swinging gently in small circles."},
+      {id:"p1_2", name:"Elbow flexion & extension", desc:"Bend and straighten your elbow slowly."},
+      {id:"p1_3", name:"Wrist extension & grip pumps", desc:"Bend your wrist back and gently open/close your grip."},
+      {id:"p1_4", name:"Passive forward elevation", desc:"Therapist-assisted or with a pulley — do not lift the arm yourself."},
+    ],
+    // Phase 3 — Weeks 6-12, Active-Assisted / Active
+    [
+      {id:"p2_1", name:"Wand/stick elevation & external rotation", desc:"Use a wand or stick to help raise and rotate the arm."},
+      {id:"p2_2", name:"Wall crawls / ladder climbs", desc:"Walk your fingers up a wall or ladder rungs."},
+      {id:"p2_3", name:"Supine active arm raises", desc:"Lying on your back, actively raise your arm within comfort."},
+      {id:"p2_4", name:"Scapular squeezes", desc:"Retract and depress your shoulder blades."},
+    ],
+    // Phase 4 — Months 3-6, Progressive Resistance
+    [
+      {id:"p3_1", name:"Resistance band external/internal rotation", desc:"Arm at your side, rotate against light band resistance."},
+      {id:"p3_2", name:"Scapular rows", desc:"Use an elastic band to row and squeeze the shoulder blades."},
+      {id:"p3_3", name:"Sidelying dumbbell external rotation", desc:"Lying on your side, rotate the arm holding a 1–3 lb dumbbell."},
+      {id:"p3_4", name:"Closed-chain wall slides", desc:"Hands on the wall, slide arms up and down with control."},
+    ],
+    // Phase 5 — Months 6-12, Advanced Conditioning
+    [
+      {id:"p4_1", name:"Overhead press progressions", desc:"Gradually loaded overhead pressing under guidance."},
+      {id:"p4_2", name:"Plyometric ball tosses (wall)", desc:"Throw and catch a ball against a wall for dynamic control."},
+      {id:"p4_3", name:"PNF diagonal lift patterns", desc:"Diagonal lifting patterns for functional strength."},
+      {id:"p4_4", name:"Sport / job-specific simulation drills", desc:"Practice the specific movements of your sport or job."},
+    ],
+  ],
+  exerciseCaution:[
+    "This is preparation only — no exercises are required yet. Work through this checklist before your surgery date.",
+    "Strictly NO active shoulder elevation. Do not fire the operative rotator cuff muscles. Keep the arm supported at all times when out of the sling.",
+    "Avoid compensation shrugging. Stop motion at the point of sharp pain or pinching. No lifting objects over 1–2 lbs.",
+    "Keep weights low and reps high (15–20). Avoid heavy overhead resistance or explosive movements.",
+    "Warm up thoroughly before loading. Confirm full scapular control before increasing resistance or speed."
+  ],
+  progressLabel:(done,total)=> done+" of "+total+" done today",
+  sleep:[
+    {icon:"🛋️", title:"Semi-reclined", desc:"Many patients sleep more comfortably semi-reclined — in a recliner, or propped up on several pillows — for the first 1–2 weeks.", avoid:false},
+    {icon:"🛏️", title:"Back sleeping", desc:"Support your elbow and forearm on a pillow, with your hand resting on your stomach.", avoid:false},
+    {icon:"🤗", title:"Side sleeping (unaffected side only)", desc:"Hug a pillow with your arm fully resting on it, elbow slightly forward of your shoulder.", avoid:false},
+    {icon:"🚫", title:"Avoid", desc:"Never lie directly on the operated shoulder.", avoid:true},
+  ],
+  normalNote:"Normal in the first 48 hours: moderate local swelling, bruising extending down the arm or chest, mild temperature under 38.0°C (100.4°F), and temporary numbness from your nerve block.",
+  emergencyLabel:"Emergency — Contact Clinic or ER Immediately",
+  emergencyFlags:[
+    "Fever above 38.3°C (101°F) or persistent chills",
+    "Spreading redness, warmth, or red streaks extending from the incision",
+    "Pus-like, foul-smelling, or cloudy drainage from the surgical wound",
+    "Progressive, severe swelling or throbbing pain in the forearm, wrist, or calf (possible blood clot)",
+    "Chest pain, sudden shortness of breath, or coughing up blood — seek emergency care immediately",
+    "A sudden, audible \"pop\" or tearing sensation with sudden severe pain and loss of function",
+    "New or worsening numbness, tingling, or loss of movement in the hand after the nerve block has fully worn off",
+    "Any fall or injury to the arm during your recovery",
+  ],
+  nonEmergencyLabel:"Non-Urgent — Contact Clinic or PT Next Business Day",
+  nonEmergencyFlags:[
+    "Mild increase in soreness after starting new exercises — manage with ice and prescribed pain medication",
+    "Minor skin irritation or rubbing from the sling straps",
+    "Slight clear or light pink fluid on the dressing during the first 48 hours",
+  ],
+},
+th: {
+  appName:"ShoulderCare", appSub:"คู่มือฟื้นตัวหลังผ่าตัด",
+  dayLabel:"วันหลังผ่าตัด", untilLabel:"วันก่อนถึงวันผ่าตัด", editDate:"แก้ไขวันที่ผ่าตัดและ HN",
+  roadmapTitle:"เส้นทางการฟื้นตัวของท่าน", todayTitle:"สิ่งที่ควรทำวันนี้",
+  goalsTitle:"เป้าหมายหลังผ่าตัด",
+  goals:["ปกป้องเอ็นที่ซ่อมแซม","ลดข้อติดแข็ง"],
+  hnPrefix:"HN: ", hnAdd:"เพิ่มหมายเลข HN ของท่าน",
+  tabHome:"หน้าแรก", tabCare:"การดูแล", tabExercises:"ท่าบริหาร", tabSleep:"การนอน", tabSOS:"แจ้งเตือน",
+  sosTitle:"เมื่อใดควรขอความช่วยเหลือ", sosSub:"หากพบอาการต่อไปนี้ ให้ติดต่อทีมผู้ดูแลทันที",
+  emergencyNote:"หากเป็นเหตุฉุกเฉินที่อาจเป็นอันตรายถึงชีวิต โปรดโทรหาหน่วยฉุกเฉินในพื้นที่ของท่านทันที",
+  onboardTitle:"ยินดีต้อนรับ — มาตั้งค่าการฟื้นตัวของท่านกัน",
+  onboardLead:"ข้อมูลนี้จะช่วยให้แอปแสดงระยะการฟื้นตัวและท่าบริหารที่เหมาะกับท่านในตอนนี้",
+  onboardDateLabel:"วันที่ท่านผ่าตัดหัวไหล่",
+  onboardHNLabel:"หมายเลขประจำตัวผู้ป่วย (HN)",
+  onboardHNHint:"ช่วยให้เจ้าหน้าที่โรงพยาบาลค้นหาประวัติของท่านได้รวดเร็วขึ้น",
+  onboardSave:"บันทึกและดำเนินการต่อ", onboardSkip:"ข้ามไปก่อน",
+  noDateChip:"กรุณาระบุวันที่ผ่าตัด",
+  noDateDesc:"แตะ \"แก้ไขวันที่ผ่าตัด\" ด้านบน เพื่อให้เราแสดงระยะการฟื้นตัวปัจจุบันของท่าน",
+  callBtnPrefix:"โทร ",
+  phaseNames:["ระยะที่ 1","ระยะที่ 2","ระยะที่ 3","ระยะที่ 4","ระยะที่ 5"],
+  phaseShort:["ร.1","ร.2","ร.3","ร.4","ร.5"],
+  phaseWeeks:["ก่อนผ่าตัด","สัปดาห์ที่ 0–6","สัปดาห์ที่ 6–12","เดือนที่ 3–6","เดือนที่ 6–12"],
+  phaseTitles:[
+    "การเตรียมตัวก่อนผ่าตัด","ปกป้องแบบพาสซีฟ","เคลื่อนไหวแบบมีผู้ช่วย/ออกแรงเอง","เสริมแรงต้านแบบค่อยเป็นค่อยไป","ฝึกความฟิตขั้นสูง"
+  ],
+  phaseDesc:[
+    "เตรียมร่างกาย บ้าน และความพร้อมทางใจก่อนผ่าตัด เพื่อให้การฟื้นตัวราบรื่นที่สุด",
+    "รักษาการเคลื่อนไหวของข้อต่อส่วนปลายและผ่อนคลายหัวไหล่แบบพาสซีฟ ระหว่างที่จุดซ่อมกำลังหาย",
+    "ฟื้นฟูช่วงการเคลื่อนไหวแบบออกแรงเอง และปรับจังหวะการเคลื่อนไหวของสะบักให้กลับสู่ปกติ",
+    "เสริมความทนทานและความแข็งแรงเบาๆ ของกล้ามเนื้อหัวไหล่ พร้อมฝึกควบคุมสะบัก",
+    "เสริมสร้างความแข็งแรงตามการใช้งานจริง ความมั่นคงแบบเคลื่อนไหว และกลับสู่กีฬาหรืองานหนัก"
+  ],
+  completeChip:"ครบกำหนดเส้นทางการฟื้นตัว 1 ปี",
+  completeDesc:"ท่านฟื้นตัวครบตามเส้นทางทั้งหมดแล้ว ควรทำท่าบริหารดูแลรักษาต่อเนื่องตามที่ทีมผู้ดูแลแนะนำ",
+  todayReminders:[
+    // ระยะที่ 1 — เตรียมตัวก่อนผ่าตัด
+    [
+      "ปฏิบัติตามคำแนะนำการงดอาหารและการปรับยาก่อนผ่าตัด",
+      "จัดหาผู้ช่วยดูแลท่านที่บ้านในช่วงวันแรกๆ หลังผ่าตัด",
+      "เตรียมเสื้อผ้าแบบกระดุมหน้าและจัดพื้นที่พักฟื้น (เก้าอี้เอนหรือหมอนรูปลิ่ม)",
+      "นำหมายเลข HN และบัตรประชาชนติดตัวไปโรงพยาบาล",
+    ],
+    // ระยะที่ 2 — สัปดาห์ 0-6
+    [
+      "ใส่สลิงตามคำแนะนำ แม้ขณะนอนหลับ เว้นแต่จะได้รับคำแนะนำเป็นอย่างอื่น",
+      "หากยังอยู่ในช่วงวันแรกๆ ให้ประคบเย็น 15-20 นาที ทุก 1-2 ชั่วโมง",
+      "รับประทานยาแก้ปวดก่อนที่จะปวดมาก ไม่ใช่หลังจากปวดแล้ว",
+      "ห้ามยกไหล่โดยออกแรงเอง — ปกป้องจุดที่ซ่อมแซม",
+    ],
+    // ระยะที่ 3 — สัปดาห์ 6-12
+    [
+      "ใส่สลิงต่อไปตามที่ค่อยๆ ลดลง ตามคำแนะนำของนักกายภาพบำบัด",
+      "เน้นการเคลื่อนไหวแบบมีผู้ช่วยและหลีกเลี่ยงการยกไหล่ชดเชย",
+      "ห้ามยกของหนักเกิน 0.5-1 กก.",
+      "ดูท่าบริหารประจำวันได้ที่แท็บ \"ท่าบริหาร\"",
+    ],
+    // ระยะที่ 4 — เดือน 3-6
+    [
+      "ใช้น้ำหนักเบาและทำซ้ำมากๆ (15-20 ครั้ง)",
+      "หลีกเลี่ยงแรงต้านเหนือศีรษะหนักๆ หรือการเคลื่อนไหวที่รวดเร็วรุนแรง",
+      "กล้ามเนื้อล้าและปวดเมื่อยหลังบริหารถือเป็นเรื่องปกติ แต่ปวดแปลบไม่ใช่เรื่องปกติ",
+      "ดูท่าบริหารประจำวันได้ที่แท็บ \"ท่าบริหาร\"",
+    ],
+    // ระยะที่ 5 — เดือน 6-12
+    [
+      "วอร์มอัพให้เพียงพอก่อนเริ่มบริหาร",
+      "ตรวจสอบว่าควบคุมสะบักได้ดีก่อนเพิ่มแรงต้านหรือความเร็ว",
+      "ทำท่าบริหารดูแลรักษาต่อเนื่องตามที่ทีมผู้ดูแลแนะนำ",
+      "ค่อยๆ กลับไปทำกิจกรรมเฉพาะกีฬาหรืองานภายใต้การดูแล",
+    ],
+  ],
+  care:[
+    { icon:"🏥", title:"ก่อนการผ่าตัด", items:[
+      "ปฏิบัติตามรายการเตรียมตัวก่อนผ่าตัดจากทีมศัลยแพทย์ (การงดอาหาร ยาที่ต้องงด และสิ่งที่ต้องเตรียมมา)",
+      "ยาชาเฉพาะที่จะทำให้แขนชาไปหลายชั่วโมงหลังผ่าตัด ควรวางแผนรับประทานยาแก้ปวดมื้อแรกก่อนที่ยาชาจะหมดฤทธิ์",
+      "จัดเตรียมหมอนรูปลิ่มหรือเก้าอี้เอนสำหรับนอน และจัดวางของใช้ประจำวัน (โทรศัพท์ น้ำดื่ม รีโมท ของว่าง) ให้อยู่ในระดับเอวก่อนเข้ารับการผ่าตัด"
+    ]},
+    { icon:"👕", title:"การแต่งกาย (เสื้อผ้า)", items:[
+      "ใช้เสื้อแบบกระดุมหน้าหรือเสื้อกล้ามแบบหลวม",
+      "ก้มตัวไปข้างหน้าเพื่อให้แขนข้างที่ผ่าตัดห้อยลงตามธรรมชาติ",
+      "สวมแขนข้างที่ผ่าตัดเข้าไปในแขนเสื้อก่อน จากนั้นคลุมเสื้อรอบตัวและสวมแขนข้างที่ไม่ได้ผ่าตัดเข้าแขนเสื้ออีกข้าง"
+    ]},
+    { icon:"🩹", title:"การดูแลแผลผ่าตัด", items:[
+      "รักษาแผลให้สะอาด แห้ง และปิดผ้าปิดแผลไว้จนถึงวันนัดตรวจ เว้นแต่จะได้รับคำแนะนำเป็นอย่างอื่น",
+      "การมีสารคัดหลั่งปนเลือดเล็กน้อยในช่วง 24–48 ชั่วโมงแรกถือเป็นเรื่องปกติ",
+      "ห้ามทาโลชั่น ขี้ผึ้ง หรือแป้งใกล้แผลผ่าตัด เว้นแต่จะได้รับคำแนะนำ"
+    ]},
+    { icon:"🚿", title:"การอาบน้ำและการดูแลแผล", items:[
+      "การอาบน้ำ: ทำได้ แต่ไม่ควรให้น้ำไหลผ่านแผลโดยตรง หากต้องการล้างใต้วงแขน ให้ก้มตัวและปล่อยแขนห้อยตามธรรมชาติ",
+      "การแช่น้ำ/ว่ายน้ำ: หลีกเลี่ยงการแช่แผลในน้ำ",
+      "ไหมเย็บ/เทปปิดแผล: จะตัดไหมในวันที่ 7–10 หลังผ่าตัด แล้วปิดด้วยเทปกาวสีขาว (Steri-Strips) ซึ่งจะค่อยๆ ลอกหลุดเองภายใน 1–3 สัปดาห์"
+    ]},
+    { icon:"❄️", title:"การควบคุมความเจ็บปวดและบวม", items:[
+      "ยาชาเฉพาะที่จะค่อยๆ หมดฤทธิ์ภายในไม่กี่ชั่วโมง ควรรับประทานยาแก้ปวดมื้อแรกก่อนที่ยาชาจะหมดฤทธิ์ ไม่ใช่หลังจากนั้น",
+      "รับประทานยาแก้ปวดตามที่แพทย์สั่ง — ได้ผลดีที่สุดเมื่อรับประทานก่อนที่จะปวดมาก",
+      "ประคบเย็นครั้งละ 15–20 นาที ทุก 1–2 ชั่วโมงในช่วงวันแรกๆ จากนั้นตามความสบาย",
+      "พักโดยมีหมอนรองรับแขนเพื่อช่วยลดอาการบวม"
+    ]},
+    { icon:"🎽", title:"การดูแลสลิงพยุงแขน", items:[
+      "ใส่สลิงตามคำแนะนำอย่างเคร่งครัด ถอดออกเฉพาะเพื่อทำความสะอาด ประคบเย็น หรือทำท่าบริหารที่ได้รับอนุญาต",
+      "ทำความสะอาดและเช็ดรักแร้กับผิวหนังใต้สายสลิงให้แห้งทุกวัน เพื่อป้องกันการระคายเคืองและกลิ่น",
+      "ตรวจดูผิวหนังใต้สายสลิงและรักแร้ทุกวัน ว่ามีรอยแดง ผื่น หรือระคายเคืองหรือไม่"
+    ]},
+    { icon:"🚗", title:"ข้อควรระวังด้านกิจกรรม", items:[
+      "ห้ามขับรถขณะที่ยังใส่สลิงหรือขณะรับประทานยาแก้ปวดตามใบสั่งแพทย์",
+      "ห้ามยก ผลัก หรือดึงสิ่งของด้วยแขนข้างที่ผ่าตัด",
+      "หลีกเลี่ยงการสูบบุหรี่หรือผลิตภัณฑ์นิโคติน เนื่องจากจะทำให้เอ็นและกระดูกหายช้าลง"
+    ]},
+    { icon:"🦴", title:"ทำความเข้าใจการหายของร่างกาย", items:[
+      "เอ็นต้องใช้เวลายึดติดกับกระดูกใหม่ นี่คือเหตุผลที่ต้องจำกัดการเคลื่อนไหวอย่างเคร่งครัดในช่วงแรก แม้ว่าแผลภายนอกจะหายเร็วกว่าก็ตาม",
+      "กล้ามเนื้อล้าและปวดเมื่อยเล็กน้อยหลังบริหารถือเป็นเรื่องปกติ แต่หากปวดแปลบทันทีหรือรู้สึกเหมือนมีอะไรฉีกขาด ควรหยุดและติดต่อทีมผู้ดูแลทันที",
+      "พยายามผ่อนคลายสะบักและไม่ยกไหล่ขณะบริหาร การยกไหล่ชดเชยเป็นรูปแบบที่พบบ่อยและควรหลีกเลี่ยง",
+      "การขับรถ งานบ้านเบาๆ และงานโต๊ะทำงาน มักกลับมาทำได้ในช่วงเดือนที่ 3–6 เมื่อแพทย์ยืนยันว่าท่านพร้อมแล้ว",
+      "เมื่อฟื้นตัวเต็มที่แล้ว การทำท่าบริหารดูแลรักษาอย่างสม่ำเสมอที่บ้านจะช่วยรักษาสมดุลกล้ามเนื้อหัวไหล่และลดความเสี่ยงการบาดเจ็บซ้ำในระยะยาว"
+    ]},
+    { icon:"📅", title:"การนัดตรวจครั้งแรก", items:[
+      "โดยทั่วไปจะนัด 1–2 สัปดาห์หลังผ่าตัด เพื่อตรวจแผลและยืนยันระยะการฟื้นฟูของท่าน"
+    ]},
+  ],
+  exercises:[
+    // Phase 1 — การเตรียมตัวก่อนผ่าตัด
+    [
+      {id:"pre_1", name:"ยืนยันคำแนะนำก่อนผ่าตัด", desc:"ปฏิบัติตามคำแนะนำการงดอาหารและการปรับยาจากทีมศัลยแพทย์"},
+      {id:"pre_2", name:"จัดหาผู้ช่วยดูแลที่บ้าน", desc:"จัดหาผู้ช่วยดูแลท่านในช่วงวันแรกๆ หลังผ่าตัด"},
+      {id:"pre_3", name:"เตรียมเสื้อผ้าแบบกระดุมหน้า", desc:"เตรียมเสื้อแบบกระดุมหน้าหรือซิปที่ใส่ได้ด้วยแขนข้างเดียว — ดูวิธีสวมใส่ได้ที่แท็บการดูแล"},
+      {id:"pre_4", name:"จัดเตรียมพื้นที่พักฟื้น", desc:"จัดเตรียมเก้าอี้เอนหรือหมอนรูปลิ่ม และจัดวางของใช้ประจำวันให้อยู่ในระดับเอว"},
+    ],
+    // Phase 2 — สัปดาห์ 0-6 ปกป้องแบบพาสซีฟ
+    [
+      {id:"p1_1", name:"แกว่งแขนแบบเพนดูลัม (Codman)", desc:"ก้มตัวและปล่อยแขนห้อย แกว่งเป็นวงกลมเล็กๆ เบาๆ"},
+      {id:"p1_2", name:"งอ-เหยียดข้อศอก", desc:"งอและเหยียดข้อศอกช้าๆ"},
+      {id:"p1_3", name:"เหยียดข้อมือและบีบมือ", desc:"เหยียดข้อมือขึ้นและบีบ-แบมือเบาๆ"},
+      {id:"p1_4", name:"ยกแขนแบบพาสซีฟ", desc:"ให้นักกายภาพบำบัดหรือรอกช่วยยก — ห้ามออกแรงยกเอง"},
+    ],
+    // Phase 3 — สัปดาห์ 6-12 เคลื่อนไหวแบบมีผู้ช่วย/ออกแรงเอง
+    [
+      {id:"p2_1", name:"ยกแขนด้วยไม้ / หมุนไหล่ออกด้านนอก", desc:"ใช้ไม้ช่วยยกแขนและหมุนไหล่ออกด้านนอก"},
+      {id:"p2_2", name:"ไต่กำแพงด้วยนิ้วมือ", desc:"ใช้นิ้วมือไต่ขึ้นตามผนังหรือบันไดไต่"},
+      {id:"p2_3", name:"ยกแขนออกแรงเองท่านอนหงาย", desc:"นอนหงายและยกแขนขึ้นเองภายในระยะที่สบาย"},
+      {id:"p2_4", name:"บีบสะบัก", desc:"ดึงสะบักเข้าหากันและกดลง"},
+    ],
+    // Phase 4 — เดือน 3-6 เสริมแรงต้าน
+    [
+      {id:"p3_1", name:"ยางยืดหมุนไหล่เข้า-ออก", desc:"แขนแนบลำตัว หมุนไหล่ต้านแรงยางยืดเบาๆ"},
+      {id:"p3_2", name:"ท่าโรว์สะบัก", desc:"ใช้ยางยืดดึงเข้าหาลำตัวเพื่อฝึกกล้ามเนื้อสะบัก"},
+      {id:"p3_3", name:"หมุนไหล่ออกด้านนอกท่านอนตะแคง", desc:"นอนตะแคงและหมุนไหล่ออกด้านนอก ถือดัมเบล 1–3 ปอนด์"},
+      {id:"p3_4", name:"ท่าสไลด์กำแพง", desc:"มือแนบกำแพงและเลื่อนแขนขึ้น-ลงอย่างควบคุม"},
+    ],
+    // Phase 5 — เดือน 6-12 ฝึกความฟิตขั้นสูง
+    [
+      {id:"p4_1", name:"ท่าดันน้ำหนักเหนือศีรษะแบบค่อยเป็นค่อยไป", desc:"เริ่มฝึกดันน้ำหนักเหนือศีรษะทีละน้อยภายใต้การดูแล"},
+      {id:"p4_2", name:"โยนลูกบอลกระแทกกำแพง", desc:"โยนและรับลูกบอลกระแทกกำแพงเพื่อฝึกการควบคุมแบบไดนามิก"},
+      {id:"p4_3", name:"ท่ายกแขนแนวทแยงแบบ PNF", desc:"ฝึกยกแขนตามแนวทแยงมุมเพื่อความแข็งแรงตามการใช้งานจริง"},
+      {id:"p4_4", name:"ท่าจำลองกีฬา/งานเฉพาะทาง", desc:"ฝึกท่าทางที่จำลองกีฬาหรืองานที่ต้องกลับไปทำ"},
+    ],
+  ],
+  exerciseCaution:[
+    "นี่คือการเตรียมตัวเท่านั้น ยังไม่ต้องทำท่าบริหารใดๆ — ทำรายการนี้ให้ครบก่อนถึงวันผ่าตัด",
+    "ห้ามยกไหล่โดยออกแรงเองโดยเด็ดขาด ห้ามเกร็งกล้ามเนื้อ rotator cuff ข้างที่ผ่าตัด ต้องมีที่รองรับแขนตลอดเวลาเมื่อถอดสลิงออก",
+    "หลีกเลี่ยงการยกไหล่ชดเชย หยุดทันทีหากรู้สึกปวดแปลบหรือหนีบ ห้ามยกของหนักเกิน 0.5–1 กก.",
+    "ใช้น้ำหนักเบาและทำซ้ำมากๆ (15–20 ครั้ง) หลีกเลี่ยงแรงต้านเหนือศีรษะหนักๆ หรือการเคลื่อนไหวที่รวดเร็วรุนแรง",
+    "วอร์มอัพให้เพียงพอก่อนเริ่ม ตรวจสอบว่าควบคุมสะบักได้ดีก่อนเพิ่มแรงต้านหรือความเร็ว"
+  ],
+  progressLabel:(done,total)=> "ทำแล้ว "+done+" จาก "+total+" ท่าวันนี้",
+  sleep:[
+    {icon:"🛋️", title:"ท่ากึ่งเอนหลัง", desc:"ผู้ป่วยหลายท่านจะนอนหลับสบายขึ้นในท่ากึ่งเอนหลัง เช่น บนเก้าอี้เอนได้ หรือใช้หมอนหลายใบพิงหลัง ในช่วง 1–2 สัปดาห์แรก", avoid:false},
+    {icon:"🛏️", title:"นอนหงาย", desc:"ใช้หมอนรองข้อศอกและแขนท่อนล่าง โดยให้มือวางพักบนหน้าท้อง", avoid:false},
+    {icon:"🤗", title:"นอนตะแคง (เฉพาะด้านที่ไม่ได้ผ่าตัด)", desc:"กอดหมอนโดยให้แขนวางพักบนหมอนเต็มที่ ข้อศอกอยู่ด้านหน้าหัวไหล่เล็กน้อย", avoid:false},
+    {icon:"🚫", title:"ข้อห้าม", desc:"ห้ามนอนทับไหล่ข้างที่ผ่าตัดโดยตรง", avoid:true},
+  ],
+  normalNote:"ปกติในช่วง 48 ชั่วโมงแรก: บวมและช้ำบริเวณแขน/หน้าอกปานกลาง มีไข้ต่ำกว่า 38.0°C และมีอาการชาชั่วคราวจากยาชาเฉพาะที่",
+  emergencyLabel:"ฉุกเฉิน — ติดต่อคลินิกหรือห้องฉุกเฉินทันที",
+  emergencyFlags:[
+    "มีไข้สูงกว่า 38.3°C หรือหนาวสั่นต่อเนื่อง",
+    "แดงลามขยายวง ร้อนบริเวณแผล หรือมีเส้นแดงลามจากแผล",
+    "มีสารคัดหลั่งเป็นหนอง มีกลิ่นเหม็น หรือขุ่น จากแผลผ่าตัด",
+    "บวมรุนแรงขึ้นเรื่อยๆ หรือปวดตุบๆ ที่แขนท่อนล่าง ข้อมือ หรือน่อง (อาจเป็นลิ่มเลือด)",
+    "เจ็บหน้าอก หายใจถี่ขึ้นทันที หรือไอเป็นเลือด — ควรไปห้องฉุกเฉินทันที",
+    "ได้ยินเสียง \"ป๊อก\" หรือรู้สึกเหมือนมีอะไรฉีกขาดทันที ร่วมกับปวดรุนแรงและขยับไม่ได้",
+    "ชา รู้สึกซ่า หรือขยับมือไม่ได้มากขึ้น หลังยาชาเฉพาะที่หมดฤทธิ์แล้ว",
+    "หกล้มหรือแขนได้รับบาดเจ็บระหว่างการฟื้นตัว",
+  ],
+  nonEmergencyLabel:"ไม่ฉุกเฉิน — ติดต่อคลินิกหรือนักกายภาพบำบัดในวันทำการถัดไป",
+  nonEmergencyFlags:[
+    "ปวดเมื่อยเพิ่มขึ้นเล็กน้อยหลังเริ่มท่าบริหารใหม่ — ประคบเย็นและรับประทานยาแก้ปวดตามที่แพทย์สั่ง",
+    "ผิวหนังระคายเคืองเล็กน้อยจากสายสลิง",
+    "มีของเหลวใสหรือสีชมพูอ่อนซึมออกมาที่ผ้าปิดแผลในช่วง 48 ชั่วโมงแรก",
+  ],
+}
+};
+
+/* ============================= STATE ============================= */
+let STATE = { lang:"en", surgeryDate:null, hn:"", logDate:null, doneIds:[] };
+let currentExPhase = 0;
+
+function todayISO(){ return new Date().toISOString().slice(0,10); }
+
+async function loadState(){
+  try{
+    const raw = localStorage.getItem('shouldercare-app-state');
+    if(raw){
+      const parsed = JSON.parse(raw);
+      STATE = Object.assign(STATE, parsed);
+    }
+  }catch(e){ /* no saved state yet, or storage unavailable (private browsing) */ }
+  if(STATE.logDate !== todayISO()){ STATE.logDate = todayISO(); STATE.doneIds = []; }
+}
+
+async function saveState(){
+  try{ localStorage.setItem('shouldercare-app-state', JSON.stringify(STATE)); }catch(e){ console.error('save failed', e); }
+}
+
+/* ============================= I18N ============================= */
+function t(key){ return CONTENT[STATE.lang][key]; }
+
+function applyStaticI18n(){
+  document.querySelectorAll('[data-t]').forEach(el=>{
+    const key = el.getAttribute('data-t');
+    const val = CONTENT[STATE.lang][key];
+    if(typeof val === 'string') el.textContent = val;
+  });
+  document.documentElement.lang = STATE.lang;
+  document.getElementById('btn-lang-en').classList.toggle('active', STATE.lang==='en');
+  document.getElementById('btn-lang-th').classList.toggle('active', STATE.lang==='th');
+}
+
+function setLang(lang){
+  STATE.lang = lang;
+  saveState();
+  renderAll();
+}
+
+/* ============================= PHASE LOGIC ============================= */
+// Overall phase index: 0 = Preop, 1-4 = postop phases (postop day 1 = day of surgery).
+const POSTOP_BOUNDS = [ [1,42], [43,84], [85,180], [181,365] ];
+const RING_MAX_DAY = 365; // ring fills fully across the full 1-year postop timeline
+const CLINIC_NAME = "Dr. Sorawut Thamyongkit";
+const CLINIC_PHONE = "02 839 6000";
+
+// Returns raw signed day offset from surgery date (0 = surgery day, negative = before surgery), or null if no date set.
+function daySinceOffset(){
+  if(!STATE.surgeryDate) return null;
+  const surgery = new Date(STATE.surgeryDate+'T00:00:00');
+  const now = new Date(); now.setHours(0,0,0,0);
+  return Math.round((now - surgery)/86400000);
+}
+
+function currentPhaseIndex(offset){
+  if(offset===null) return 0;
+  if(offset < 0) return 0; // preop
+  const postopDay = offset + 1;
+  for(let i=0;i<POSTOP_BOUNDS.length;i++){
+    if(postopDay>=POSTOP_BOUNDS[i][0] && postopDay<=POSTOP_BOUNDS[i][1]) return i+1;
+  }
+  return 4; // beyond bounds, treat as last phase (complete state handled separately)
+}
+
+/* ============================= RENDER: HOME ============================= */
+function renderHome(){
+  const c = CONTENT[STATE.lang];
+  const offset = daySinceOffset();
+  const isPreop = offset!==null && offset < 0;
+  const postopDay = offset!==null ? offset + 1 : null;
+  const phaseIdx = currentPhaseIndex(offset);
+  const ringDayEl = document.getElementById('ring-day');
+  const dayLabelEl = document.getElementById('ring-daylabel');
+  const chipEl = document.getElementById('ring-phase-chip');
+  const descEl = document.getElementById('ring-phase-desc');
+  const ringFg = document.getElementById('ring-fg');
+  const circumference = 440;
+
+  if(offset===null){
+    ringDayEl.textContent = "—";
+    dayLabelEl.textContent = c.dayLabel;
+    chipEl.textContent = c.noDateChip;
+    descEl.textContent = c.noDateDesc;
+    ringFg.style.strokeDashoffset = circumference;
+  } else if(isPreop){
+    ringDayEl.textContent = -offset;
+    dayLabelEl.textContent = c.untilLabel;
+    chipEl.textContent = c.phaseNames[0] + " · " + c.phaseWeeks[0];
+    descEl.textContent = c.phaseTitles[0] + " — " + c.phaseDesc[0];
+    ringFg.style.strokeDashoffset = circumference;
+  } else {
+    ringDayEl.textContent = postopDay;
+    dayLabelEl.textContent = c.dayLabel;
+    if(postopDay > RING_MAX_DAY){
+      chipEl.textContent = c.completeChip;
+      descEl.textContent = c.completeDesc;
+      ringFg.style.strokeDashoffset = 0;
+    } else {
+      chipEl.textContent = c.phaseNames[phaseIdx] + " · " + c.phaseWeeks[phaseIdx];
+      descEl.textContent = c.phaseTitles[phaseIdx] + " — " + c.phaseDesc[phaseIdx];
+      const pct = Math.min(postopDay/RING_MAX_DAY, 1);
+      ringFg.style.strokeDashoffset = circumference * (1-pct);
+    }
+  }
+
+  // stepper (5 phases)
+  const stepper = document.getElementById('home-stepper');
+  stepper.innerHTML = c.phaseShort.map((label,i)=>{
+    let cls = 'step';
+    if(offset!==null){
+      const complete = !isPreop && postopDay > RING_MAX_DAY;
+      if(i < phaseIdx || complete) cls += ' done';
+      else if(i === phaseIdx && !complete) cls += ' current';
+    }
+    return `<div class="${cls}"><div class="dot">${i+1}</div><div class="lbl">${label}</div></div>`;
+  }).join('');
+
+  // today reminders — phase-specific
+  const reminders = c.todayReminders[phaseIdx] || c.todayReminders[0];
+  document.getElementById('today-reminders').innerHTML = reminders.map(r=>`• ${r}`).join('<br><br>');
+
+  // goals list (static, not phase-dependent)
+  document.getElementById('goals-list').innerHTML = c.goals.map(g=>`<div class="goal-item">🎯 ${g}</div>`).join('');
+
+  // HN line
+  const hnEl = document.getElementById('hn-line');
+  hnEl.textContent = STATE.hn ? (c.hnPrefix + STATE.hn) : c.hnAdd;
+}
+
+/* ============================= RENDER: CARE ============================= */
+function renderCare(){
+  const c = CONTENT[STATE.lang];
+  const wrap = document.getElementById('care-accordion');
+  wrap.innerHTML = c.care.map((sec,i)=>`
+    <div class="acc-item" id="acc-${i}">
+      <button class="acc-head" onclick="toggleAcc(${i})">
+        <div class="acc-icon">${sec.icon}</div>
+        <div class="acc-title">${sec.title}</div>
+        <svg class="acc-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+      <div class="acc-body"><ul>${sec.items.map(it=>`<li>${it}</li>`).join('')}</ul></div>
+    </div>
+  `).join('');
+}
+function toggleAcc(i){
+  document.getElementById('acc-'+i).classList.toggle('open');
+}
+
+/* ============================= RENDER: EXERCISES ============================= */
+// Which c.exercises[] source arrays feed into each phase tab's checklist (cumulative for postop phases 1-3).
+const EXERCISE_SOURCES = [ [0], [1], [1,2], [1,2,3], [4] ];
+
+function renderExercisePhaseTabs(){
+  const c = CONTENT[STATE.lang];
+  const offset = daySinceOffset();
+  const activeIdx = offset===null ? 0 : Math.min(currentPhaseIndex(offset), c.phaseNames.length-1);
+  if(currentExPhase===null || currentExPhase===undefined) currentExPhase = activeIdx;
+  const tabs = document.getElementById('ex-phase-tabs');
+  tabs.innerHTML = c.phaseNames.map((name,i)=>
+    `<button class="phase-tab ${i===currentExPhase?'active':''}" onclick="selectExPhase(${i})">${name}</button>`
+  ).join('');
+}
+function selectExPhase(i){ currentExPhase = i; renderExerciseList(); renderExercisePhaseTabs(); }
+
+function renderExerciseList(){
+  const c = CONTENT[STATE.lang];
+  const listEl = document.getElementById('ex-list');
+  const progWrap = document.getElementById('ex-progress-wrap');
+  progWrap.style.display = 'block';
+
+  const sources = EXERCISE_SOURCES[currentExPhase];
+  const exList = sources.flatMap(src => c.exercises[src]);
+  const caution = c.exerciseCaution[currentExPhase];
+  const doneSet = new Set(STATE.doneIds);
+  const doneCount = exList.filter(e=>doneSet.has(e.id)).length;
+
+  document.getElementById('ex-progress-fill').style.width = (exList.length? (doneCount/exList.length*100):0)+'%';
+  document.getElementById('ex-progress-label').textContent = c.progressLabel(doneCount, exList.length);
+
+  let html = `<div class="ex-phase-def"><strong>${c.phaseWeeks[currentExPhase]} · ${c.phaseTitles[currentExPhase]}</strong><br>${c.phaseDesc[currentExPhase]}</div>`;
+  if(caution) html += `<div class="ex-caution">${currentExPhase===0?'ℹ️':'⚠'} ${caution}</div>`;
+  html += exList.map(ex=>{
+    const checked = doneSet.has(ex.id);
+    return `
+      <div class="ex-row">
+        <div class="ex-check ${checked?'checked':''}" onclick="toggleExercise('${ex.id}')">
+          <svg viewBox="0 0 24 24"><polyline points="4,13 9,18 20,6"/></svg>
+        </div>
+        <div class="ex-figure">🖼</div>
+        <div class="ex-body">
+          <div class="ex-name ${checked?'checked-text':''}">${ex.name}</div>
+          <div class="ex-desc">${ex.desc}</div>
+        </div>
+      </div>`;
+  }).join('');
+  listEl.innerHTML = html;
+}
+
+function toggleExercise(id){
+  const idx = STATE.doneIds.indexOf(id);
+  if(idx>=0) STATE.doneIds.splice(idx,1); else STATE.doneIds.push(id);
+  saveState();
+  renderExerciseList();
+}
+
+/* ============================= RENDER: SLEEP ============================= */
+function renderSleep(){
+  const c = CONTENT[STATE.lang];
+  document.getElementById('sleep-list').innerHTML = c.sleep.map(s=>`
+    <div class="sleep-card ${s.avoid?'avoid':''}">
+      <div class="sleep-icon">${s.icon}</div>
+      <div>
+        <div class="sleep-title" style="${s.avoid?'color:var(--danger-dark)':''}">${s.title}</div>
+        <div class="sleep-desc">${s.desc}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+/* ============================= RENDER: SOS ============================= */
+function renderSOS(){
+  const c = CONTENT[STATE.lang];
+  let html = `<div class="info-note">ℹ️ ${c.normalNote}</div>`;
+  html += `<div class="flag-section-label">${c.emergencyLabel}</div>`;
+  html += c.emergencyFlags.map(f=>`
+    <div class="flag-item"><div class="flag-dot"></div><div class="flag-text">${f}</div></div>
+  `).join('');
+  html += `<div class="flag-section-label soft">${c.nonEmergencyLabel}</div>`;
+  html += c.nonEmergencyFlags.map(f=>`
+    <div class="flag-item-soft"><div class="flag-dot-soft"></div><div class="flag-text-soft">${f}</div></div>
+  `).join('');
+  document.getElementById('flag-list').innerHTML = html;
+
+  const btn = document.getElementById('call-btn');
+  const btnText = document.getElementById('call-btn-text');
+  btn.href = 'tel:' + CLINIC_PHONE.replace(/[^0-9+]/g,'');
+  btnText.textContent = c.callBtnPrefix + CLINIC_NAME;
+}
+
+/* ============================= TABS ============================= */
+function switchTab(tab){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+tab).classList.add('active');
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
+  document.querySelector('main').scrollTop = 0;
+}
+
+/* ============================= ONBOARD ============================= */
+function openOnboard(prefill){
+  if(prefill){
+    document.getElementById('input-surgery-date').value = STATE.surgeryDate || '';
+    document.getElementById('input-hn').value = STATE.hn || '';
+  }
+  document.getElementById('onboard').classList.remove('hidden');
+}
+function closeOnboard(){ document.getElementById('onboard').classList.add('hidden'); renderAll(); }
+function saveOnboard(){
+  const d = document.getElementById('input-surgery-date').value;
+  STATE.surgeryDate = d || STATE.surgeryDate;
+  STATE.hn = document.getElementById('input-hn').value;
+  currentExPhase = null; // re-sync exercise tab to the (possibly new) current phase
+  saveState();
+  closeOnboard();
+}
+
+/* ============================= RENDER ALL ============================= */
+function renderAll(){
+  applyStaticI18n();
+  renderHome();
+  renderCare();
+  renderExercisePhaseTabs();
+  renderExerciseList();
+  renderSleep();
+  renderSOS();
+}
+
+/* ============================= INIT ============================= */
+(async function init(){
+  await loadState();
+  renderAll();
+  if(!STATE.surgeryDate){ openOnboard(false); }
+})();
+</script>
+
+</body>
+</html>
