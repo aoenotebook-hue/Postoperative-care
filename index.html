@@ -1113,6 +1113,7 @@ function careVideoBlock(sec){
     <div class="care-video" id="carevid-${sec.video}" onclick="maybeOpenCareVideo('${sec.video}')">
       <div class="care-video-pending">🎥 ${c.videoComingSoon}</div>
       <video class="care-video-el" muted preload="metadata" playsinline
+        onloadedmetadata="document.getElementById('carevid-${sec.video}').classList.add('has-video')"
         onloadeddata="document.getElementById('carevid-${sec.video}').classList.add('has-video')"
         onerror="this.remove()"
         src="videos/${sec.video}.mp4"></video>
@@ -1182,6 +1183,7 @@ function renderExerciseList(){
         <div class="ex-figure" id="fig-${ex.id}" onclick="maybeOpenVideo('${ex.id}')">
           <span class="ex-figure-fallback">🖼</span>
           <video class="ex-figure-video" muted preload="metadata" playsinline
+            onloadedmetadata="document.getElementById('fig-${ex.id}').classList.add('has-video')"
             onloadeddata="document.getElementById('fig-${ex.id}').classList.add('has-video')"
             onerror="this.remove()"
             src="videos/${ex.id}.mp4"></video>
