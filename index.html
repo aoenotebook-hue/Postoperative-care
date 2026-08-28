@@ -996,6 +996,9 @@ const CLINIC_PHONE = "02 839 6000";
 // Google Apps Script Web App URL — see setup instructions provided separately.
 // Until this is replaced with a real deployed URL, check-ins are still saved on-device but not sent anywhere.
 const SHEET_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbx6u2Mrkw6P_7mIzBoV4BQC9hgqkoM2gb17xiCPsaGaba-Y0Wf-y6A__YsUireUgmSQ/exec";
+// Must exactly match SHARED_SECRET in the Apps Script backend — a basic filter against
+// automated spam, not a substitute for keeping the Google Sheet itself private.
+const SUBMIT_SECRET = "5ef8f79a53529281d70262072ec2cc0441adea7e8d5d9d91";
 
 /* ============================= ADD TO HOME SCREEN ============================= */
 let deferredInstallPrompt = null;
@@ -1212,6 +1215,7 @@ async function handleSubmitCheckin(){
     exercisesDoneCount: doneToday.length,
     exercisesTotalCount: exList.length,
     exercisesDoneNames: doneToday.map(e=>e.name).join("; "),
+    secret: SUBMIT_SECRET,
   };
 
   STATE.checkins[payload.date] = Object.assign({}, payload, { synced:false });
