@@ -207,6 +207,13 @@
   .resource-source{font-size:11px;color:var(--teal);font-weight:600;margin-top:4px;}
   .resource-arrow{color:var(--muted);flex-shrink:0;}
 
+  /* ---------- Privacy (Resources tab) ---------- */
+  .privacy-item{display:flex;gap:12px;align-items:flex-start;padding:11px 0;border-bottom:1px solid var(--border);}
+  .privacy-item:last-child{border-bottom:none;padding-bottom:2px;}
+  .privacy-item:first-child{padding-top:0;}
+  .privacy-icon{font-size:18px;width:26px;flex-shrink:0;text-align:center;line-height:1.5;}
+  .privacy-text{font-size:13.5px;line-height:1.5;color:#3a3a3a;}
+
   /* ---------- Emergency ---------- */
   .sos-banner{background:linear-gradient(135deg,var(--danger),#8f241d);color:#fff;border-radius:var(--radius);padding:18px;margin-bottom:16px;}
   .sos-banner h2{margin:0 0 6px;font-size:16px;}
@@ -368,6 +375,10 @@
 
     <!-- RESOURCES -->
     <section class="view" id="view-resources">
+      <div class="card" style="margin-bottom:16px;">
+        <h2 data-t="privacyTitle">Your Privacy</h2>
+        <div id="privacy-list"></div>
+      </div>
       <div class="card" style="margin-bottom:16px;">
         <h2 data-t="resourcesTitle">Additional Resources</h2>
         <p class="muted" data-t="resourcesIntro">A few outside resources you may find helpful during your recovery.</p>
@@ -694,6 +705,15 @@ en: {
     "New or worsening numbness, tingling, or loss of movement in the hand after the nerve block has fully worn off",
   ],
   tabResources:"Resources",
+  privacyTitle:"Your Privacy",
+  privacy:[
+    { icon:"📱", text:"Your answers are stored on this phone. If you clear the app's data or switch phones, this data will be lost." },
+    { icon:"🎯", text:"Your data is used only to show your shoulder's progress and recommend care suited to you." },
+    { icon:"🏥", text:"Your daily check-in results are sent to your care team and recorded to support your treatment." },
+    { icon:"🔒", text:"No data is sent anywhere before you give consent, and the app never sends data automatically in the background." },
+    { icon:"🙈", text:"If you share this phone with someone else, be aware that anyone who opens this app can see your data." },
+    { icon:"🗑️", text:"You can delete all data on this device at any time using the \"Reset App Data\" button at the bottom of the Home tab." },
+  ],
   resourcesTitle:"Additional Resources",
   resourcesIntro:"A few outside resources you may find helpful during your recovery.",
   resources:[
@@ -910,6 +930,15 @@ th: {
     "ชา รู้สึกซ่า หรือขยับมือไม่ได้มากขึ้น หลังยาชาเฉพาะที่หมดฤทธิ์แล้ว",
   ],
   tabResources:"แหล่งข้อมูล",
+  privacyTitle:"ความเป็นส่วนตัวของคุณ",
+  privacy:[
+    { icon:"📱", text:"คำตอบของคุณถูกเก็บไว้ในโทรศัพท์เครื่องนี้ หากล้างข้อมูลแอปหรือเปลี่ยนเครื่อง ข้อมูลจะหายไป" },
+    { icon:"🎯", text:"ข้อมูลของคุณใช้เพื่อแสดงความก้าวหน้าของอาการไหล่ และแนะนำการดูแลที่เหมาะสมกับคุณเท่านั้น" },
+    { icon:"🏥", text:"ผลบันทึกประจำวันของคุณจะถูกส่งไปยังทีมผู้ดูแล บันทึกประวัติเพื่อให้การรักษาที่เหมาะสม" },
+    { icon:"🔒", text:"ไม่มีการส่งข้อมูลใดก่อนที่คุณจะยินยอม และแอปไม่ส่งข้อมูลเองโดยอัตโนมัติเบื้องหลัง" },
+    { icon:"🙈", text:"หากคุณใช้โทรศัพท์ร่วมกับผู้อื่น โปรดทราบว่าผู้ที่เปิดแอปนี้จะเห็นข้อมูลของคุณได้" },
+    { icon:"🗑️", text:"คุณสามารถลบข้อมูลทั้งหมดบนเครื่องนี้ได้ทุกเมื่อ ด้วยปุ่ม \"รีเซ็ตข้อมูลแอป\" ที่ด้านล่างของแท็บหน้าแรก" },
+  ],
   resourcesTitle:"แหล่งข้อมูลเพิ่มเติม",
   resourcesIntro:"แหล่งข้อมูลภายนอกที่อาจเป็นประโยชน์ระหว่างการฟื้นตัวของท่าน",
   resources:[
@@ -1484,6 +1513,17 @@ function renderSleep(){
   `).join('');
 }
 
+/* ============================= RENDER: PRIVACY (Resources tab) ============================= */
+function renderPrivacy(){
+  const c = CONTENT[STATE.lang];
+  document.getElementById('privacy-list').innerHTML = c.privacy.map(item=>`
+    <div class="privacy-item">
+      <div class="privacy-icon">${item.icon}</div>
+      <div class="privacy-text">${item.text}</div>
+    </div>
+  `).join('');
+}
+
 /* ============================= RENDER: RESOURCES ============================= */
 function renderResources(){
   const c = CONTENT[STATE.lang];
@@ -1589,6 +1629,7 @@ function renderAll(){
   renderExercisePhaseTabs();
   renderExerciseList();
   renderSleep();
+  renderPrivacy();
   renderResources();
   renderSOS();
 }
